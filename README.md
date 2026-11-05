@@ -19,26 +19,144 @@
 
 ---
 
-## Contents
+## 🚀 Quick Live Demo — Judge Evaluation Guide
 
-1. [Executive summary](#executive-summary)
-2. [The problem, and why this is not a replacement for Nav2](#the-problem-and-why-this-is-not-a-replacement-for-nav2)
-3. [What KineGuard actually does](#what-kineguard-actually-does)
-4. [Architecture](#architecture)
-5. [End-to-end pipeline](#end-to-end-pipeline)
-6. [Mathematical foundations and safety checks](#mathematical-foundations-and-safety-checks)
-7. [Model integration and evidence provenance](#model-integration-and-evidence-provenance)
-8. [ROS 2 Nav2 export](#ros-2-nav2-export)
-9. [Frontend and visualization](#frontend-and-visualization)
-10. [Technology stack](#technology-stack)
-11. [Getting started](#getting-started)
-12. [API reference](#api-reference)
-13. [Testing and reproducibility](#testing-and-reproducibility)
-14. [Project structure](#project-structure)
-15. [Operational behavior and troubleshooting](#operational-behavior-and-troubleshooting)
-16. [Security, correctness and limitations](#security-correctness-and-limitations)
-17. [Research questions and roadmap](#research-questions-and-roadmap)
-18. [Hackathon submission and acknowledgments](#hackathon-submission-and-acknowledgments)
+### 🌐 Launch the Interactive Application
+
+**[▶ OPEN KINEGUARD ROS2 STUDIO — LIVE DEMO](https://kine-guard-ros-2-studio.vercel.app)**
+
+**No installation, local environment setup, account, or personal Meta API key required.**
+
+The public deployment connects:
+
+- **Frontend:** React 18 + TypeScript + Vite, hosted on Vercel.
+- **Backend:** Java 21 + Spring Boot 3.3, hosted on Railway.
+- **AI:** Meta Model API — SAM 3.1 and Muse Spark 1.3.
+- **Safety:** Deterministic kinematic verification with counterexample-guided replanning.
+- **Output:** ROS 2 Nav2 occupancy maps and verified metric waypoints.
+
+Live Meta inference is available while the evaluation deployment and API credentials remain enabled.
+
+### Test 1 — Live AI Planning and Safety Verification
+
+**Recommended first test.**
+
+1. Open the [live application](https://kine-guard-ros-2-studio.vercel.app).
+2. Select **Warehouse Logistics Spine A**.
+3. Keep the default corridor calibration, the `"box"` concept, and **Muse Spark 1.3 (Fast Agent)**.
+4. Click **RUN FULL VERIFIABLE PIPELINE (SAM 3.1 + TOOL LOOP)**.
+5. Allow the pipeline to complete. Execution may take tens of seconds depending on API latency.
+6. Inspect **Verifiable Agent Tool-Calling Loop**, **Metric Top-Down Nav2 Occupancy Grid**, and **Pipeline Stream**.
+
+**Expected behavior:**
+
+1. **SAM 3.1** detects and localizes obstacles through Meta Model API.
+2. **Muse Spark 1.3** proposes an initial robot trajectory.
+3. **KinematicSafetyKernel** checks stopping distance and obstacle clearance.
+4. An unsafe path is **REJECTED**, with a geometric counterexample.
+5. Muse Spark replans using the verifier's feedback.
+6. The corrected trajectory is approved only if the safety constraints pass.
+7. The ROS 2 Nav2 compiler exports the occupancy grid and verified waypoints.
+
+**Observed production result — November 5, 2026:**
+
+| Component | Result |
+|---|---|
+| SAM 3.1 | LIVE API HTTP 200 — approximately 1.61 s |
+| Muse Spark — Turn 1 | LIVE API HTTP 200 — approximately 5.20 s |
+| Muse Spark — Turn 2 | LIVE API HTTP 200 — approximately 7.62 s |
+| Initial minimum clearance | 0.00 m — REJECTED |
+| Required lateral clearance | 0.47 m |
+| Corrected minimum clearance | 0.82 m — APPROVED |
+| ROS 2 Nav2 export | 80 × 120 cells at 0.05 m/cell; 4 verified waypoints |
+
+**Key engineering principle:** The AI proposes candidate trajectories; the deterministic kinematic safety kernel has final authority over approval.
+
+---
+
+### Test 2 — Upload Your Own Image (Live SAM 3.1 + Metric Calibration)
+
+**Important: This capability was successfully tested with a real uploaded warehouse image. Follow the calibration instructions below to reproduce it.**
+
+1. Click **Upload Photo** in the **REAL-WORLD CORRIDOR FEED** panel.
+2. Select an image of a warehouse aisle, industrial corridor, or similar environment with visible obstacles.
+3. Confirm that the uploaded photograph appears under **USER PHOTO + SAM 3.1 & HOMOGRAPHY**.
+4. In the right-hand panel **PHYSICAL KINEMATICS & META MODEL API CONTROLS**, find **Corredor (m) — foto subida**.
+5. Set the corridor dimensions to the dimensions appropriate for your image. For the supplied 4 m × 6 m demonstration example, use:
+   - **Ancho (m):** `4`
+   - **Largo (m):** `6`
+6. **CRITICAL — Open the scale dropdown immediately below these fields.** Select **"Escala nominal — dimensiones asumidas"** (`NOMINAL_ASSUMED`) if you are intentionally testing with assumed corridor dimensions.
+7. Inspect the four draggable floor calibration points **P0–P3** and align them with the corresponding floor corners if necessary.
+8. Keep the `"box"` concept selected and click **RUN FULL VERIFIABLE PIPELINE (SAM 3.1 + TOOL LOOP)**.
+9. Inspect the detected obstacles, projected occupancy grid, tool-calling loop, verification status, and ROS 2 output.
+
+**Why step 6 matters:** An uploaded image without an established metric scale is treated as `SCALE: UNKNOWN`. Even if SAM 3.1 detects an obstacle, KineGuard will halt verification with `UNVERIFIED` and export zero approved navigation poses rather than claim an unverified metric trajectory is safe.
+
+The **NOMINAL_ASSUMED** setting explicitly enables a scenario evaluation using assumed dimensions. It is not a substitute for measured, validated calibration in a physical robot deployment.
+
+**Observed uploaded-image test — November 5, 2026:**
+
+- Live SAM 3.1 detected a warehouse box.
+- Detections whose ground-contact points were outside the calibrated corridor were rejected.
+- With unknown scale, the system returned `UNVERIFIED` and zero approved poses.
+- With the nominal 4 m × 6 m corridor assumption selected, the live pipeline completed its planning and verification process.
+- The corrected trajectory reached `APPROVED`.
+- ROS 2 Nav2 export generated an 80 × 120 occupancy grid and four verified metric waypoints under the assumed calibration.
+
+This demonstrates both successful image-based operation and the system's conservative behavior when essential calibration information is missing.
+
+**Safety limitation:** `APPROVED` means the calculated trajectory satisfies the implemented verifier under the supplied geometry, perception results, and physical assumptions. It does not constitute certification for autonomous operation in an uncontrolled real-world environment.
+
+---
+
+### Inspect and Export the Results
+
+The interactive interface exposes:
+
+- **SAM 3.1 perception:** detected obstacles and image-to-floor projection.
+- **3×3 projective homography:** image coordinates mapped into a metric floor representation.
+- **Multi-turn tool-calling:** rejected and corrected trajectories with verification evidence.
+- **Kinematic verification:** stopping distance, clearance thresholds, and counterexamples.
+- **ROS 2 Nav2 artifacts:** downloadable `.pgm`, `.yaml`, and `.json` outputs.
+- **Pipeline Stream:** execution IDs, model-call status, decisions, and verification logs.
+
+Click **Export ROS 2 Nav2 Package (.pgm + .yaml + .json)** to inspect the generated navigation artifacts.
+
+### Reproducibility and Execution Modes
+
+KineGuard supports both live Meta Model API execution and deterministic offline demonstrations.
+
+- **`LIVE_META_API` / `SAM_LIVE` / `LLM_TOOL_CALL`:** Indicate live-model execution in the relevant pipeline stages.
+- **`OFFLINE_DETERMINISTIC` / `MOCK_SCRIPTED`:** Indicate deterministic or scripted demonstration paths.
+- **`UNVERIFIED`:** Required verification evidence is insufficient; no trajectory is authorized.
+
+Offline results must not be represented as live Meta inference. The evaluation deployment may temporarily fall back to offline behavior when live API access is unavailable.
+
+**The project demonstrates AI-assisted robotic navigation planning with independent safety verification, not physical robot execution.**
+
+
+---
+
+## Contents
+1. [Quick live demo — Judge evaluation guide](#-quick-live-demo--judge-evaluation-guide)
+2. [Executive summary](#executive-summary)
+3. [The problem, and why this is not a replacement for Nav2](#the-problem-and-why-this-is-not-a-replacement-for-nav2)
+4. [What KineGuard actually does](#what-kineguard-actually-does)
+5. [Architecture](#architecture)
+6. [End-to-end pipeline](#end-to-end-pipeline)
+7. [Mathematical foundations and safety checks](#mathematical-foundations-and-safety-checks)
+8. [Model integration and evidence provenance](#model-integration-and-evidence-provenance)
+9. [ROS 2 Nav2 export](#ros-2-nav2-export)
+10. [Frontend and visualization](#frontend-and-visualization)
+11. [Technology stack](#technology-stack)
+12. [Getting started](#getting-started)
+13. [API reference](#api-reference)
+14. [Testing and reproducibility](#testing-and-reproducibility)
+15. [Project structure](#project-structure)
+16. [Operational behavior and troubleshooting](#operational-behavior-and-troubleshooting)
+17. [Security, correctness and limitations](#security-correctness-and-limitations)
+18. [Research questions and roadmap](#research-questions-and-roadmap)
+19. [Hackathon submission and acknowledgments](#hackathon-submission-and-acknowledgments)
 
 ---
 
