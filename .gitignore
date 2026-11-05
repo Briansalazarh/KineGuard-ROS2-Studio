@@ -1,0 +1,43 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.jks
+*.keystore
+
+# Java / Maven
+**/target/
+*.class
+hs_err_pid*
+replay_pid*
+
+# Node / Vite
+**/node_modules/
+**/dist/
+**/.vite/
+npm-debug.log*
+yarn-error.log*
+
+# IDE and OS
+.vscode/
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Logs and temporary files
+*.log
+*.tmp
+/tmp/
+
+# Generated artifacts and local evidence (regenerable, not source)
+__pycache__/
+generated_images/
+backend/target/live-scene-response.json
+
+# Local working documents (kept on disk, not published)
+docs/HISTORIAL_AUDITORIA_INTEGRIDAD_Y_ARQUITECTURA_KINEGUARD.md
+docs/P0-INTEGRITY-AUDIT.md

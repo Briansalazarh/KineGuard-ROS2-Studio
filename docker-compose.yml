@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  vanguard-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vanguard-os-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_THREADS_VIRTUAL_ENABLED=true
+      - META_API_KEY=${META_API_KEY:-mock_mode}
+    restart: unless-stopped
+
+  vanguard-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: vanguard-os-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8080
+    depends_on:
+      - vanguard-backend
+    restart: unless-stopped

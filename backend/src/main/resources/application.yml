@@ -1,0 +1,81 @@
+server:
+  port: 8080
+  compression:
+    enabled: false
+
+spring:
+  application:
+    name: vanguard-os-controller
+  threads:
+    virtual:
+      enabled: true
+  jackson:
+    serialization:
+      write-dates-as-timestamps: true
+
+meta:
+  api:
+    base-url: https://api.meta.ai/v1
+    baseten-url: https://model-muse-spark-open.api.baseten.co/environments/production/predict
+    key: ${META_API_KEY:mock_mode}
+    timeout-ms: 30000
+  models:
+    wonder: muse-wonder-1.0
+    spark: muse-spark-1.3
+    image: muse-image-1.0
+    transcribe: muse-voice-transcribe-1.0
+    sam: sam-3.1
+
+vanguard:
+  simulation:
+    grid-width: 1000.0
+    grid-height: 1000.0
+    tick-rate-hz: 25
+    fleet-size: 6
+    robot-radius: 18.0
+    safety-buffer: 26.0
+    max-deceleration: 3.5
+    friction-coeff: 0.72
+    gravity: 9.81
+    fleet:
+      - id: AMR-01
+        callsign: VANGUARD-ALPHA
+        payload-class: HEAVY_FREIGHT
+        start-x: 160.0
+        start-y: 220.0
+        max-speed: 62.0
+      - id: AMR-02
+        callsign: VANGUARD-BRAVO
+        payload-class: CRYO_CONTAINMENT
+        start-x: 500.0
+        start-y: 180.0
+        max-speed: 68.0
+      - id: AMR-03
+        callsign: VANGUARD-CHARLIE
+        payload-class: HAZMAT_CORE
+        start-x: 820.0
+        start-y: 240.0
+        max-speed: 58.0
+      - id: AMR-04
+        callsign: VANGUARD-DELTA
+        payload-class: PRECISION_OPTICS
+        start-x: 200.0
+        start-y: 780.0
+        max-speed: 70.0
+      - id: AMR-05
+        callsign: VANGUARD-ECHO
+        payload-class: HEAVY_FREIGHT
+        start-x: 520.0
+        start-y: 800.0
+        max-speed: 64.0
+      - id: AMR-06
+        callsign: VANGUARD-FOXTROT
+        payload-class: AUTONOMOUS_TUG
+        start-x: 840.0
+        start-y: 740.0
+        max-speed: 66.0
+
+logging:
+  level:
+    root: INFO
+    com.vanguard: INFO
